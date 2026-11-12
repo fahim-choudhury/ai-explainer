@@ -25,6 +25,24 @@ def load_lexicon(script):
     return lex
 
 
+def espeak_data_path():
+    """espeak-ng silently ignores a data path longer than about 160 bytes and falls back to a path baked in
+    at build time, which does not exist. A repository in a deep folder hits that, so copy the data to a short path."""
+    import os, espeakng_loader
+    src = Path(espeakng_loader.get_data_path())
+    if len(str(src)) <= 100:
+        return str(src)
+    cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "xv-espeak-ng-data"
+    if len(str(cache)) > 100:
+        cache = Path("/tmp") / f"xv-espeak-ng-data-{os.getuid()}"
+    stamp = cache / ".source"
+    if not stamp.exists() or stamp.read_text() != str(src):
+        shutil.rmtree(cache, ignore_errors=True)
+        shutil.copytree(src, cache)
+        stamp.write_text(str(src))
+    return str(cache)
+
+
 def spoken(text, lex):
     for pat, rep in lex.items():
         text = re.sub(pat, rep, text)
@@ -59,7 +77,9 @@ def main(proj):
             from kokoro_onnx import Kokoro
             sys.path.insert(0, str(TOOLKIT))
             from paths import model
-            kokoro = Kokoro(str(model("kokoro/kokoro-v1.0.onnx")), str(model("kokoro/voices-v1.0.bin")))
+            from kokoro_onnx.config import EspeakConfig
+            kokoro = Kokoro(str(model("kokoro/kokoro-v1.0.onnx")), str(model("kokoro/voices-v1.0.bin")),
+                            espeak_config=EspeakConfig(data_path=espeak_data_path()))
         a, sr = kokoro.create(said, voice=voice, speed=speed, lang=lang)
         assert sr == SR
         a = a.astype(np.float32)

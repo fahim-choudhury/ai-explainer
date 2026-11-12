@@ -7,6 +7,5 @@ stills/**
 render/*.mp4
 render/.raw.mp4
 publish/social/shorts/*.mp4
-publish/youtube/upload_result.json
 *.mov
 *.mkv

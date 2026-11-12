@@ -23,7 +23,7 @@ The same input must give the same output. Anything a command can do, a command d
 - Build each review message from `xv review <project>`: paste its output, then add only the list of changes since the last version and any open questions.
 - When narration changes after gate 3, run `xv changed <project>` and give the owner its timestamps, so they can check those lines without rewatching.
 - Use the defaults table below instead of choosing again per video. Record any departure with `xv decision`.
-- Changes to this repository (lexicon, shared components, toolkit code) get their own commit here, separate from project commits. Run `xv doctor` afterwards.
+- Changes to this repository (lexicon, shared components, toolkit code) get their own commit here, separate from project commits. Run `.venv/bin/python -m pytest` and `xv doctor` afterwards.
 
 ### Defaults
 

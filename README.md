@@ -1,4 +1,6 @@
-# ai-explainer-workflow
+# ai-explainer
+
+[![ci](https://github.com/fahim-choudhury/ai-explainer/actions/workflows/ci.yml/badge.svg)](https://github.com/fahim-choudhury/ai-explainer/actions/workflows/ci.yml)
 
 An AI agent produces an animated explainer video with you: research, script, narration, subtitles, animated diagrams, final render, and a ready-to-paste YouTube and social package. You approve each stage at a review gate, then upload and post yourself.
 
@@ -7,7 +9,13 @@ The workflow works with any agent that can run shell commands and edit files: Cl
 - Narration: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech, run locally
 - Pronunciation check: [faster-whisper](https://github.com/SYSTRAN/faster-whisper), run locally
 - Animation and rendering: [Remotion](https://www.remotion.dev) (React)
-- No cloud APIs and no accounts. Nothing is uploaded anywhere.
+- No cloud APIs and no accounts. Nothing is uploaded anywhere, and rendering works offline once `./setup` has run.
+
+![Contact sheet of six scenes from "NetBird explained", made with this workflow](docs/netbird-scenes.jpg)
+
+*Scene stills from [NetBird explained](https://youtu.be/2e-DbSTCIwA), a video made with this workflow. The agent shows you sheets like this at the visuals gate.*
+
+Narration, the pronunciation check and the narration lint rules are English only for now.
 
 ## Requirements
 
@@ -21,15 +29,15 @@ Linux on x86_64 or arm64. On Windows, use WSL.
 | ffmpeg | `dnf install ffmpeg` (RPM Fusion) | `apt install ffmpeg` |
 | Node.js 20 or newer, with npm | `dnf install nodejs` | `apt install nodejs npm`, or [nodejs.org](https://nodejs.org) |
 
-Remotion's headless browser needs the usual Chromium libraries. If `xv selftest` fails to render a still, install them: on Debian or Ubuntu, `apt install libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libgbm1 libpango-1.0-0 libasound2`.
+Remotion's headless browser needs the usual Chromium libraries. If `xv selftest` fails to render a still, install them. On Ubuntu 24.04, as the CI workflow does: `apt install libnss3 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libgbm1 libasound2t64 libxrandr2 libxkbcommon0 libxfixes3 libxcomposite1 libxdamage1 libpango-1.0-0 libcairo2 libcups2 libdrm2` (`libasound2` before 24.04).
 
 About 2 GB of disk for the downloads.
 
 ## Setup
 
 ```sh
-git clone <this repository> ai-explainer-workflow
-cd ai-explainer-workflow
+git clone https://github.com/fahim-choudhury/ai-explainer.git
+cd ai-explainer
 ./setup
 ```
 
@@ -47,6 +55,8 @@ cd ai-explainer-workflow
 Then it runs `xv doctor`, which checks all of the above against the lockfiles and writes a verification stamp, and `xv selftest`, which takes a throwaway project through narration, the Whisper check, linting, a type check and two stills. Every `xv` command that uses a dependency refuses to run until `xv doctor` has passed, and again after any lockfile changes.
 
 Rerunning `./setup` is safe; it skips what is already correct.
+
+Unit tests for the lint rules, chapters, ASR normalisation and project state commands need no models: `.venv/bin/python -m pytest`. CI runs them, and runs `./setup` from empty on Ubuntu, on every push and weekly.
 
 ## Workspace
 

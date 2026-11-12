@@ -250,15 +250,15 @@ def cmd_short(args):
     ass = outdir / f"{a.name}.ass"
     head = ("[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\n\n[V4+ Styles]\n"
             "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, Alignment, MarginL, MarginR, MarginV, BorderStyle, Outline, Shadow\n"
-            "Style: Cap,Noto Sans,58,&H00FFFFFF,&H00000000,&H99000000,1,2,70,70,330,1,4,0\n"
-            "Style: Title,Noto Sans,74,&H003083F6,&H00000000,&H00000000,1,8,70,70,230,1,0,0\n\n"
+            "Style: Cap,Inter,58,&H00FFFFFF,&H00000000,&H99000000,0,2,70,70,330,1,4,0\n"
+            "Style: Title,Inter,74,&H003083F6,&H00000000,&H00000000,0,8,70,70,230,1,0,0\n\n"
             "[Events]\nFormat: Layer, Start, End, Style, Text\n")
     ev = [f"Dialogue: 0,{ts(0)},{ts(a.end - a.start)},Title,{a.title}"] if a.title else []
     ev += [f"Dialogue: 0,{ts(s)},{ts(e)},Cap,{txt}" for s, e, txt in cues]
     ass.write_text(head + "\n".join(ev) + "\n")
     out = outdir / f"{a.name}.mp4"
     vf = ("[0:v]split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=30:2,eq=brightness=-0.15[bg];"
-          f"[b]scale=1080:-2[fg];[bg][fg]overlay=0:(H-h)/2,ass='{ass}'")
+          f"[b]scale=1080:-2[fg];[bg][fg]overlay=0:(H-h)/2,ass='{ass}':fontsdir='{REPO / "remotion/fonts"}'")
     run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str(a.start), "-to", str(a.end), "-i", src, "-filter_complex", vf,
          "-c:v", "libx264", "-crf", "20", "-preset", "medium", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", out])
     print(f"{out}  ({a.end - a.start:.0f}s, 1080x1920)")

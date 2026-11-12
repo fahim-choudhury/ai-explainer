@@ -15,7 +15,7 @@ To resume later, start the agent here and say "continue the <topic> explainer". 
 ## Layout
 
 ```
-ai-explainer-workflow/       this repository
+ai-explainer/                this repository
   AGENTS.md                  instructions for the agent (CLAUDE.md and GEMINI.md point here)
   GUIDE.md                   this file
   STYLE.md                   writing rules for every text the agent produces
@@ -225,5 +225,5 @@ Carry the lessons into the next brief.
 - Generic visual components go in `remotion/ui.tsx`, which every project shares through the `@xv/` import alias. Project-specific pieces, such as a product wordmark, live in that project's `video/src/brand.tsx`. Changing an existing component changes every video at its next render, so the agent checks stills of the other projects after such a change.
 - Every dependency is pinned: Python packages in `uv.lock`, the Python and uv versions in `deps/tools.json`, Node packages in `package-lock.json`, models in `deps/models.json`. To upgrade one, change its pin, run `./setup`, then `xv selftest` and a render of an existing project.
 - Remotion versions move together: change every `@remotion/*` and `remotion` entry at once.
-- Each toolkit change gets its own commit in this repository, so `git log` shows when shared behaviour changed.
+- Each toolkit change gets its own commit in this repository, so `git log` shows when shared behaviour changed. Run `.venv/bin/python -m pytest` before committing.
 - Generated files (`script.md`, `description.txt`, `upload-sheet.md` and others) are rewritten on every run. Put upload-sheet notes in `publish/youtube/sheet-notes.md`.

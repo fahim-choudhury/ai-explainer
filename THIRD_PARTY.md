@@ -7,6 +7,7 @@ The MIT license in [LICENSE](LICENSE) covers this repository's own code and docu
 | Material | Author | Source | Terms |
 | --- | --- | --- | --- |
 | [STYLE.md](STYLE.md), the rules section | Ossama Chaib | The Writing Whip, [gist](https://gist.github.com/ossa-ma/dae6f9571534f3fbd1266a384be00e11), [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Adapted: skill front matter removed, introduction added. |
+| [remotion/fonts/](remotion/fonts) Inter and JetBrains Mono, latin subset | The Inter and JetBrains Mono project authors | Google Fonts | SIL Open Font License 1.1, see `remotion/fonts/OFL-*.txt` |
 | [style/tropes.md](style/tropes.md) | Ossama Chaib | [tropes.fyi](https://tropes.fyi), [gist](https://gist.github.com/ossa-ma/f3baa9d25154c33095e22272c631f5a1) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Unmodified apart from the license line appended at the end. |
 
 ## Downloaded by ./setup
@@ -18,4 +19,3 @@ The MIT license in [LICENSE](LICENSE) covers this repository's own code and docu
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) and the [small.en](https://huggingface.co/Systran/faster-whisper-small.en) model | MIT | Whisper weights by OpenAI, MIT |
 | [uv](https://github.com/astral-sh/uv) | MIT or Apache-2.0 | |
 | Python packages in `uv.lock`, Node packages in `package-lock.json` | their own licenses | |
-| Inter and JetBrains Mono fonts, loaded by `@remotion/google-fonts` at render time | SIL Open Font License 1.1 | |

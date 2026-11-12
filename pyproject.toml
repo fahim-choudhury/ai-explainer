@@ -1,5 +1,5 @@
 [project]
-name = "ai-explainer-workflow"
+name = "ai-explainer"
 version = "0.1.0"
 description = "Python side of the xv toolkit: Kokoro narration, Whisper checks, PDF text"
 requires-python = "==3.14.*"
@@ -14,3 +14,9 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = ["pytest==9.0.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

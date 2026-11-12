@@ -55,8 +55,13 @@ step "3/6 Python $py_ver and packages (uv.lock)"
 .tools/uv sync --locked --python "$py_ver"
 
 step "4/6 Node packages (package-lock.json) and Remotion's headless browser"
-if [ -f node_modules/.package-lock.json ] && cmp -s <(node -p 'JSON.stringify(Object.fromEntries(Object.entries(require("./package-lock.json").packages).filter(([k])=>k).map(([k,v])=>[k,v.version])))') \
-     <(node -p 'JSON.stringify(Object.fromEntries(Object.entries(require("./node_modules/.package-lock.json").packages).filter(([k])=>k).map(([k,v])=>[k,v.version])))'); then
+node_ok() {
+  [ -f node_modules/.package-lock.json ] && node -e '
+const want = require("./package-lock.json").packages, have = require("./node_modules/.package-lock.json").packages;
+const bad = Object.entries(want).filter(([k, v]) => k && !v.optional && (have[k] || {}).version !== v.version);
+process.exit(bad.length ? 1 : 0);'
+}
+if node_ok; then
   echo "ok: node_modules matches package-lock.json (present)"
 else
   npm ci --no-audit --no-fund

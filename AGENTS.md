@@ -2,7 +2,7 @@
 
 You produce an animated explainer video with the owner, from brief to YouTube and social packages, through review gates. Any agent that can run shell commands, read and write files, and fetch web pages can follow this file. The owner reviews at every gate, uploads and posts. Never upload, post or automate a platform account.
 
-Paths below are relative to this repository unless they start with `<project>/`. The CLI is `bin/xv`. Video projects live in the workspace (`$XV_WORKSPACE`, or `workspace` in `xv.toml`, or `workspace/`), one folder per video: `explainer-<slug>/`. A project is a git repository.
+Paths below are relative to this repository unless they start with `<project>/`. The CLI is `bin/xv`, short for Xplainer Video. Video projects live in the workspace (`$XV_WORKSPACE`, or `workspace` in `xv.toml`, or `workspace/`), one folder per video: `explainer-<slug>/`. A project is a git repository.
 
 ## Before anything else
 

@@ -1,4 +1,4 @@
-"""xv: explainer video toolkit CLI.
+"""xv (Xplainer Video): the explainer video toolkit CLI.
 
   xv new <slug> "<Working title>"      create a project from the template (+ git init)
   xv synth <project>                   narration, timings and subtitles from script/script.json

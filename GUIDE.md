@@ -20,7 +20,7 @@ ai-explainer/                this repository
   GUIDE.md                   this file
   STYLE.md                   writing rules for every text the agent produces
   setup                      installs and verifies every dependency
-  bin/xv                     command-line tool for every production step
+  bin/xv                     Xplainer Video: command-line tool for every production step
   lib/                       xv code, Kokoro synthesis, Whisper check, lexicon.json, YouTube packager
   remotion/                  shared scene components (ui.tsx) and timeline (Explainer.tsx)
   template/                  skeleton copied for each new project

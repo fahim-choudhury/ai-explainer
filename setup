@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
-# Install every dependency from pinned lockfiles, verify it, and run a self test.
-# Safe to rerun: each step skips what is already present and correct.
-#
-#   ./setup              full setup, then `xv doctor` and `xv selftest`
-#   ./setup --no-test    skip the self test
-#
-# Downloads into this repository only: .tools/ (uv, Python), .venv/, node_modules/, models/.
-# System tools (git, curl, tar, ffmpeg, Node.js 20+) are checked, not installed.
+# Install every dependency from pinned lockfiles, verify it, and run a self test. See ./setup --help.
 set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: ./setup [--no-test]
+
+Install every dependency from pinned lockfiles into this repository, verify it, and run a self test.
+Safe to rerun: each step skips what is already present and correct.
+
+Options:
+  --no-test   skip `xv selftest` at the end
+  -h, --help  show this help
+
+Downloads: uv and Python into .tools/, packages into .venv/ and node_modules/, models into models/ (about 2 GB).
+Checks but does not install: git, curl, tar, ffmpeg, Node.js 20+.
+Exit codes: 0 ready; 1 a step failed (the message says which); 2 unknown option.
+USAGE
+}
+run_test=1
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) usage; exit 0 ;;
+    --no-test) run_test=0 ;;
+    *) printf 'setup: unknown option %s\n\n' "$arg" >&2; usage >&2; exit 2 ;;
+  esac
+done
+trap 'printf "\nsetup: interrupted; rerun ./setup to continue where it stopped\n" >&2; exit 130' INT
 cd "$(dirname "$(readlink -f "$0")")"
 REPO="$PWD"
 export UV_PYTHON_INSTALL_DIR="$REPO/.tools/python"
@@ -73,7 +92,7 @@ step "5/6 models (deps/models.json, SHA256-verified)"
 
 step "6/6 verify"
 bin/xv doctor
-if [ "${1:-}" != "--no-test" ]; then
+if [ "$run_test" = 1 ]; then
   bin/xv selftest
 fi
 

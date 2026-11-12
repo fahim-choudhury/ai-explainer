@@ -1,6 +1,6 @@
 """Pronunciation check: transcribe each narration line with Whisper and compare it to the script.
 
-Usage:  xv asr <project> [--threshold 0.06] [--model small.en]
+Called by `xv asr <project> [--threshold 0.06] [--model small.en] [-o FILE]`.
 
 Writes <project>/audio/asr-check.md listing lines whose transcript differs from the
 spoken form of the script (lexicon applied) by more than the threshold
@@ -9,9 +9,11 @@ mispronounced acronym or name. Listen to the line, then either fix it with a lex
 entry ("say" in script.json or lib/tts/lexicon.json) and re-run synth, or, if it
 sounds right (NGINX -> "engine x"), add the term to "asr_accept" in script.json.
 """
-import argparse, json, re, sys
+import json, re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import ui
 from synth import load_lexicon, spoken
 import numpy as np
 import soundfile as sf
@@ -74,14 +76,9 @@ def wer(ref, hyp):
     return d[len(hyp)] / max(1, len(ref))
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("project")
-    ap.add_argument("--threshold", type=float, default=0.06)
-    ap.add_argument("--model", default="small.en")
-    ap.add_argument("--out", default=None, help="report path (default audio/asr-check.md)")
-    a = ap.parse_args()
-    proj = Path(a.project).resolve()
+def check(proj, threshold=0.06, model_name="small.en", output=None):
+    """Transcribe every line, write the report, return (flagged, total, report path)."""
+    proj = Path(proj).resolve()
     timings = json.loads((proj / "audio/timings.json").read_text())
     sf_ = proj / "script/script.json"
     script = json.loads(sf_.read_text()) if sf_.exists() else {}
@@ -93,8 +90,8 @@ def main():
     from faster_whisper import WhisperModel
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from paths import model as model_path
-    local = model_path(f"whisper/{a.model}")
-    model = WhisperModel(str(local) if local.exists() else a.model, device="cpu", compute_type="int8")
+    local = model_path(f"whisper/{model_name}")
+    model = WhisperModel(str(local) if local.exists() else model_name, device="cpu", compute_type="int8")
     rows, flagged = [], 0
     for sc in timings["scenes"]:
         for ln in sc["lines"]:
@@ -105,18 +102,15 @@ def main():
             # acronyms and CamelCase names must be heard as written (catches "NGINX" -> "Engine X")
             missing = [w for w in re.findall(r"\b(?:[A-Z]{2,}[a-z]?|[A-Z][a-z]+[A-Z]\w*)\b", said)
                        if w.lower() not in accept and norm(w) not in norm(hyp)]
-            bad = e > a.threshold or missing
+            bad = e > threshold or missing
             if bad:
                 flagged += 1
                 note = f", terms not heard as written: {', '.join(missing)}" if missing else ""
                 rows.append(f"### {sc['id']} @ {ln['start']:.1f}s  (CER {e:.0%}{note})\n- script: {ln['text']}\n- heard:  {hyp}\n")
-            print(f"{'FLAG' if bad else ' ok '} {e:5.0%}  {ln['text'][:70]}{'  missing: ' + ','.join(missing) if missing else ''}", flush=True)
+            ui.info(f"{'FLAG' if bad else ' ok '} {e:5.0%}  {ln['text'][:70]}{'  missing: ' + ','.join(missing) if missing else ''}")
     total = sum(len(s["lines"]) for s in timings["scenes"])
-    report = f"# ASR pronunciation check\n\nModel `{a.model}`, threshold {a.threshold:.0%}. {flagged} of {total} lines flagged.\n\n" + ("\n".join(rows) or "No lines flagged.\n")
-    out = Path(a.out) if a.out else proj / "audio/asr-check.md"
+    report = f"# ASR pronunciation check\n\nModel `{model_name}`, threshold {threshold:.0%}. {flagged} of {total} lines flagged.\n\n" + ("\n".join(rows) or "No lines flagged.\n")
+    out = Path(output) if output else proj / "audio/asr-check.md"
     out.write_text(report)
-    print(f"\n{flagged}/{total} flagged -> {out}")
-
-
-if __name__ == "__main__":
-    main()
+    ui.out(f"{out}  {flagged} of {total} lines flagged")
+    return flagged, total, out

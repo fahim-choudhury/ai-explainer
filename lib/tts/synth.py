@@ -1,6 +1,6 @@
 """Narration for an explainer project: Kokoro TTS per line -> narration.wav, timings.json, .srt
 
-Usage:  xv synth <project>
+Called by `xv synth <project>`.
 
 Reads   <project>/script/script.json
 Writes  <project>/audio/narration.wav      (also copied to video/public/)
@@ -15,6 +15,8 @@ import numpy as np
 import soundfile as sf
 
 TOOLKIT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(TOOLKIT))
+import ui
 SR = 24000
 
 
@@ -83,7 +85,9 @@ def main(proj):
         a, sr = kokoro.create(said, voice=voice, speed=speed, lang=lang)
         assert sr == SR
         a = a.astype(np.float32)
-        sf.write(f, a, SR)
+        tmp = f.with_suffix(".part.wav")  # write then rename: an interrupted run never leaves a broken cache entry
+        sf.write(tmp, a, SR)
+        tmp.replace(f)
         return a, True
 
     silence = lambda s: np.zeros(int(s * SR), dtype=np.float32)
@@ -100,7 +104,7 @@ def main(proj):
             g = gaps["line"] if i < len(sc["lines"]) - 1 else gaps["tail"]
             chunks.append(silence(g)); t += g
         timings["scenes"].append({"id": sc["id"], "start": round(start, 3), "end": round(t, 3), "lines": lines})
-        print(f"{sc['id']:14s} {start:7.1f}s -> {t:7.1f}s", flush=True)
+        ui.info(f"{sc['id']:14s} {start:7.1f}s -> {t:7.1f}s")
     timings["total"] = round(t, 3)
     sys.path.insert(0, str(TOOLKIT))
     from state import script_hash
@@ -116,10 +120,7 @@ def main(proj):
     pub = proj / "video/public"; pub.mkdir(parents=True, exist_ok=True)
     shutil.copy2(audio_dir / "narration.wav", pub / "narration.wav")
     words = sum(len(l.split()) for s in script["scenes"] for l in s["lines"])
-    print(f"total {t:.1f}s ({int(t // 60)}:{int(t % 60):02d}) | {words} words | {made} lines synthesized, rest cached")
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    main(sys.argv[1])
+    ui.out(f"{audio_dir / 'narration.wav'}  {int(t // 60)}:{int(t % 60):02d} ({t:.1f} s), {words} words, {made} lines synthesized, rest cached")
+    ui.out(f"{audio_dir / 'timings.json'}")
+    ui.out(f"{audio_dir / f'{slug}.srt'}")
+    return t

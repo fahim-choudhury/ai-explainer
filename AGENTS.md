@@ -11,6 +11,14 @@ Paths below are relative to this repository unless they start with `<project>/`.
 3. Resuming a video: run `bin/xv status <project>` and do what its `Next` line says.
 4. New video: run `bin/xv new <slug> "<Working title>"`, tell the owner the `<project>/inputs/` path for seed material, then start stage 0.
 
+## Using xv
+
+- `xv help <command>` shows a command's options and examples.
+- Results go to stdout; progress, hints and errors go to stderr. A `next:` line on stderr names the usual next command.
+- When you need to read a result rather than show it, use `--json`: `xv status`, `xv lint`, `xv changed`, `xv list`, `xv feedback` and `xv doctor` support it. Use `-q` to drop progress output.
+- Exit codes: 0 success; 1 failure or failed check (lint errors, doctor failures); 2 usage error; 3 dependencies not set up; 130 interrupted. Read the `xv: error:` line and the hint under it before retrying.
+- `-n`/`--dry-run` on `xv commit`, `xv gate` and `xv new` shows what would happen without changing anything.
+
 ## Determinism rules
 
 The same input must give the same output. Anything a command can do, a command does. Your judgment goes only into research, wording and visuals, and the commands check those too.
@@ -160,22 +168,24 @@ Triggered by "autopilot", "autopilot until <stage>" or "autopilot from <stage>".
 
 | Command | Result |
 | --- | --- |
-| `xv doctor [--quick]` | verify every dependency against the lockfiles |
+| `xv help [<command>]` | help and examples for xv or one command |
+| `xv doctor [--quick] [--json]` | verify every dependency against the lockfiles |
 | `xv selftest` | throwaway project through synth, ASR, lint, typecheck and stills |
-| `xv new <slug> "<title>"` | new project from `template/` |
-| `xv status <project>` | stage, gates, open feedback, stale outputs, next step |
+| `xv new <slug> "<title>" [-n]` | new project from `template/` |
+| `xv list [--json]` | projects in the workspace with their stage |
+| `xv status <project> [--json]` | stage, gates, open feedback, stale outputs, next step |
 | `xv lint <project> [--only narration\|prose]` | narration rules and style checks; exit 1 on errors |
-| `xv commit <project> <kind> "<summary>"` | commit as `<kind> vN: <summary>` |
-| `xv gate <project> <gate> [--skip "<why>"]` | approve or skip a gate, set the stage, commit |
+| `xv commit <project> <kind> "<summary>" [-n]` | commit as `<kind> vN: <summary>` |
+| `xv gate <project> <gate> [--skip "<why>"] [-f] [-n]` | approve or skip a gate, set the stage, commit |
 | `xv feedback <project> add "<item>" \| done <n> \| list` | Open feedback in STATUS.md |
 | `xv decision <project> "<text>"` | Decisions in STATUS.md |
 | `xv review <project> [<gate>]` | review package for the current stage |
-| `xv changed <project> [--since <ref>]` | changed narration lines with new timestamps |
-| `xv pdftext <file> [--out F]` | text of a PDF input |
-| `xv transcribe <file> [--out F]` | Whisper transcript of an audio or video input |
+| `xv changed <project> [--since <ref>] [--json]` | changed narration lines with new timestamps |
+| `xv pdftext <file> [-o FILE]` | text of a PDF input |
+| `xv transcribe <file> [-o FILE]` | Whisper transcript of an audio or video input |
 | `xv script-md <project>` | `script/script.md` for review |
 | `xv synth <project>` | narration, timings, srt |
-| `xv asr <project> [--out <file>]` | `audio/asr-check.md` |
+| `xv asr <project> [-o FILE]` | `audio/asr-check.md` |
 | `xv typecheck <project>` | TypeScript check of the scenes |
 | `xv studio <project>` | Remotion Studio in the browser, for the owner |
 | `xv stills <project> [--per-beat \| --frames a,b]` | stills and contact sheets |

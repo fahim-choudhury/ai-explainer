@@ -1,3 +1,4 @@
-# Copy to xv.toml (ignored by git). $XV_WORKSPACE overrides this.
+# Copy to xv.toml (ignored by git), or to ~/.config/xv/config.toml for every clone.
+# Precedence: --workspace flag, then $XV_WORKSPACE, then xv.toml, then ~/.config/xv/config.toml.
 # Folder that holds the video projects (explainer-<slug>/). Default: <repo>/workspace
 workspace = "~/Videos/explainers"

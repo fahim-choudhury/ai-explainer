@@ -131,11 +131,12 @@ The final message lists the video path, the decisions, and the files to open fir
 
 ## Toolkit commands
 
-Add `bin/` to your PATH to type `xv` directly.
+Add `bin/` to your PATH to type `xv` directly. `xv help` lists every command, and `xv help <command>` shows its options and examples. Every command accepts `-q` (quieter), `-d` (debug output) and `--no-color`.
 
 | Command | Result |
 | --- | --- |
 | `xv new <slug> "<title>"` | new project `explainer-<slug>/` |
+| `xv list` | your projects and the stage each one is at |
 | `xv script-md <project>` | `script/script.md` with word count and estimated length |
 | `xv synth <project>` | narration, timings and subtitles. Only changed lines are re-synthesized. |
 | `xv asr <project>` | pronunciation report in `audio/asr-check.md` |

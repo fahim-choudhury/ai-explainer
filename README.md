@@ -68,7 +68,7 @@ cp xv.toml.example xv.toml    # then set workspace = "~/Videos/explainers"
 export XV_WORKSPACE=~/Videos/explainers
 ```
 
-Without either, videos go to `workspace/` in the repository, which git ignores.
+A `workspace` line in `~/.config/xv/config.toml` works too, for all clones. `--workspace DIR` on any command overrides all of these. Without any of them, videos go to `workspace/` in the repository, which git ignores.
 
 ## Using it with an agent
 
@@ -81,6 +81,14 @@ ln -s "$PWD/agents/claude/skills/explainer-video" ~/.claude/skills/explainer-vid
 ```
 
 [GUIDE.md](GUIDE.md) covers the stages, how to review, autopilot, and the social media playbook.
+
+## The xv command
+
+`bin/xv` follows the [Command Line Interface Guidelines](https://clig.dev): `xv help <command>` for options and examples, results on stdout and progress on stderr, `--json` on the commands an agent reads, `-n`/`--dry-run` on the ones that commit, and documented exit codes. `xv --help` lists everything.
+
+## Uninstall
+
+Delete the repository folder. Everything `./setup` downloaded lives inside it. Two caches live outside: uv's package cache (`~/.cache/uv`, shared with other uv projects) and, only for repositories in deep folders, `~/.cache/xv-espeak-ng-data`. Your video projects stay in the workspace.
 
 ## Licenses
 

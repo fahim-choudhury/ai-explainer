@@ -1,12 +1,9 @@
-"""Deterministic text checks for an explainer project.
+"""Deterministic text checks for an explainer project (`xv lint`).
 
-Usage:  xv lint <project> [--only narration|prose]
+narration  every line in script/script.json: the narration rules in AGENTS.md
+prose      every text deliverable: STYLE.md patterns that a regex can catch
 
-narration  every line in script/script.json: the narration rules from the skill
-prose      every text deliverable: writing-whip patterns that a regex can catch
-
-Prints `file:line: E|W rule: message`. Exit status 1 when any error (E) is found.
-Warnings (W) need a human look: fix them or say in the review message why they stay.
+Findings are errors (E), which block presenting, or warnings (W), which need a human look.
 """
 import json, re, sys
 from pathlib import Path
@@ -32,12 +29,23 @@ NARR_SYMBOLS = re.compile(r"[()\[\]{}/\\%$€£&@#*_<>=+~|\";]")
 
 class Report:
     def __init__(self, proj):
-        self.proj, self.rows, self.errors = proj, [], 0
+        self.proj, self.findings = proj, []
 
     def add(self, f, line, level, rule, msg):
-        rel = f.relative_to(self.proj) if isinstance(f, Path) else f
-        self.rows.append(f"{rel}:{line}: {level} {rule}: {msg}")
-        self.errors += level == "E"
+        rel = str(f.relative_to(self.proj)) if isinstance(f, Path) and f.is_relative_to(self.proj) else str(f)
+        self.findings.append({"file": rel, "line": line, "level": level, "rule": rule, "message": msg})
+
+    @property
+    def errors(self):
+        return sum(f["level"] == "E" for f in self.findings)
+
+    @property
+    def warnings(self):
+        return sum(f["level"] == "W" for f in self.findings)
+
+    @property
+    def rows(self):
+        return [f"{f['file']}:{f['line']}: {f['level']} {f['rule']}: {f['message']}" for f in self.findings]
 
 
 def acronyms_in(text):
@@ -126,20 +134,10 @@ def prose(proj, r):
         check_prose(meta, [m.get("title", "")] + list(m.get("chapter_titles", {}).values()), r)
 
 
-def main(argv):
-    from xv import proj_path
-    proj = proj_path(argv[0])
-    only = argv[argv.index("--only") + 1] if "--only" in argv else None
+def run(proj, only=None):
     r = Report(proj)
     if only in (None, "narration"):
         narration(proj, r)
     if only in (None, "prose"):
         prose(proj, r)
-    print("\n".join(r.rows) or "clean")
-    w = sum(" W " in x for x in r.rows)
-    print(f"\n{r.errors} errors, {w} warnings")
-    return 1 if r.errors else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    return r

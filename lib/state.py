@@ -1,16 +1,11 @@
-"""Project state commands: STATUS.md, commits, review packages. Everything here is derived from files and git.
+"""Project state: STATUS.md, commits, review packages. Everything here is derived from files and git.
 
-  xv status <project>                       stage, gates, open feedback, stale outputs, next command
-  xv commit <project> <kind> "<summary>"    git add -A + commit "<kind> vN: <summary>" (N counted from git log);
-                                            kind "maintenance" commits without a version or stage change
-  xv gate <project> <gate> [--skip "<why>"] tick or skip a gate, set Stage, commit "gate <gate> approved"
-  xv feedback <project> add "<item>" ... | done <n> ... | list
-  xv decision <project> "<text>"            append to Decisions in STATUS.md
-  xv changed <project> [--since <git-ref>]  narration lines changed since a ref, with their new timestamps
-  xv review <project>                       the review package for the current stage, as markdown
+Functions return data and raise ui.XVError on expected failures; lib/xv.py turns them into commands and output.
 """
 import difflib, hashlib, json, math, re, subprocess, sys
 from pathlib import Path
+
+from ui import XVError, USAGE
 
 GATES = ["0", "1-2", "3", "4", "5", "6", "7"]
 STAGE = {"0": "0 kickoff", "1-2": "1-2 research and script", "3": "3 narration and subtitles", "4": "4 visuals",
@@ -109,65 +104,68 @@ class Status:
             self.lines.insert(e, "")
 
 
-def cmd_status(proj, args):
+NEXT = {"0": "ask the kickoff questions, fill brief.md, `xv lint`, `xv commit <p> brief ...`, `xv review`",
+        "1-2": "research -> sources.md, findings.md; script.json, storyboard.md; `xv script-md`, `xv lint`, `xv commit <p> script ...`, `xv review`",
+        "3": "`xv synth`, `xv asr` until clean, `xv commit <p> narration ...`, `xv review`",
+        "4": "scenes.tsx, `xv typecheck`, `xv stills` (+ --per-beat), inspect sheets, `xv commit <p> styleframes ...`, `xv review`",
+        "5": "`xv render`, `xv stills`, `xv commit <p> render ...`, `xv review`",
+        "6": "metadata.json, Thumbnail*.tsx, pinned-comment.txt; `xv thumbnail`, `xv youtube`, `xv lint`, `xv commit <p> youtube ...`, `xv review`",
+        "7": "GUIDE.md social section -> publish/social/; `xv lint`, `xv commit <p> social ...`, `xv review`"}
+
+
+def status(proj):
+    """Everything `xv status` shows, as data."""
     st = Status(proj)
-    print(f"{proj.name}\nStage: {st.stage()}\n")
-    for k in GATES:
-        state = st.gates().get(k, (0, "missing"))[1]
-        print(f"  gate {k:4s} {state}")
-    fb = st.items("Open feedback")
-    print(f"\nOpen feedback: {len(fb) or 'none'}")
-    for n, (_, t) in enumerate(fb, 1):
-        print(f"  {n}. {t}")
-    for s in stale(proj):
-        print("STALE:", s)
+    gates = {k: st.gates().get(k, (0, "missing"))[1] for k in GATES}
+    fb = [t for _, t in st.items("Open feedback")]
     g = st.current_gate()
-    nxt = {"0": "ask the kickoff questions, fill brief.md, `xv lint`, `xv commit <p> brief ...`, `xv review`",
-           "1-2": "research -> sources.md, findings.md; script.json, storyboard.md; `xv script-md`, `xv lint`, `xv commit <p> script ...`, `xv review`",
-           "3": "`xv synth`, `xv asr` until clean, `xv commit <p> narration ...`, `xv review`",
-           "4": "scenes.tsx, `xv typecheck`, `xv stills` (+ --per-beat), inspect sheets, `xv commit <p> styleframes ...`, `xv review`",
-           "5": "`xv render`, `xv stills`, `xv commit <p> render ...`, `xv review`",
-           "6": "metadata.json, Thumbnail*.tsx, pinned-comment.txt; `xv thumbnail`, `xv youtube`, `xv lint`, `xv commit <p> youtube ...`, `xv review`",
-           "7": "GUIDE.md social section -> publish/social/; `xv lint`, `xv commit <p> social ...`, `xv review`"}
     if fb:
-        print("\nNext: address the open feedback, `xv feedback <p> done <n>` for each, commit, `xv review`")
+        nxt = "address the open feedback, `xv feedback <p> done <n>` for each, commit, `xv review`"
     elif g:
-        print(f"\nNext (gate {g}): {nxt[g]}")
+        nxt = f"(gate {g}) {NEXT[g]}"
     else:
-        print("\nNext: nothing. All gates approved or skipped; the owner uploads and posts.")
+        nxt = "nothing: all gates approved or skipped; the owner uploads and posts"
+    return {"project": proj.name, "path": str(proj), "stage": st.stage(), "gates": gates, "current_gate": g,
+            "open_feedback": fb, "stale": stale(proj), "next": nxt.replace("<p>", proj.name)}
 
 
-def cmd_commit(proj, args):
-    if len(args) < 2 or args[0] not in KINDS:
-        sys.exit(f"usage: xv commit <project> <{'|'.join(KINDS)}> \"<summary>\"")
-    kind, summary = args[0], " ".join(args[1:])
+def commit(proj, kind, summary, dry_run=False):
+    """git add -A and commit as "<kind> vN: <summary>". Returns the message."""
+    if kind not in KINDS:
+        raise XVError(f"unknown commit kind {kind!r}", f"use one of: {', '.join(KINDS)}", code=USAGE)
+    if not summary.strip():
+        raise XVError("the summary is empty", 'say what changed, e.g. xv commit <p> script "tighten intro"', code=USAGE)
     versions = [int(m.group(1)) for s in git(proj, "log", "--format=%s", check=False).splitlines()
                 if (m := re.match(rf"{kind} v(\d+)\b", s))]
     v = max(versions, default=0) + 1
+    msg = f"{kind} v{v}: {summary}" if KINDS[kind] else f"{kind}: {summary}"
+    changes = git(proj, "status", "--porcelain")
+    if not changes:
+        raise XVError("nothing to commit", "change a file first; `git status` in the project shows the working tree")
+    if dry_run:
+        return msg, changes.splitlines()
     if KINDS[kind]:  # maintenance commits leave the stage alone and carry no version
         st = Status(proj)
         st.set_stage(f"{STAGE[KINDS[kind]]} ({kind} v{v} awaiting review)")
         st.save()
     git(proj, "add", "-A")
-    if not git(proj, "diff", "--cached", "--name-only"):
-        sys.exit("nothing to commit")
-    msg = f"{kind} v{v}: {summary}" if KINDS[kind] else f"{kind}: {summary}"
     git(proj, "commit", "-q", "-m", msg)
-    print(msg)
+    return msg, changes.splitlines()
 
 
-def cmd_gate(proj, args):
-    if not args:
-        sys.exit("usage: xv gate <project> <gate> [--skip \"<reason>\"] [--force]")
-    key = {"1": "1-2", "2": "1-2"}.get(args[0], args[0])
+def gate(proj, key, skip=None, force=False, dry_run=False):
+    """Approve (or skip) a gate, set the Stage line, commit. Returns (message, new stage)."""
+    key = {"1": "1-2", "2": "1-2"}.get(key, key)
     st = Status(proj)
     g = st.gates()
     if key not in g:
-        sys.exit(f"no gate {key} in STATUS.md")
+        raise XVError(f"no gate {key!r} in STATUS.md", f"gates are: {', '.join(GATES)}", code=USAGE)
+    if g[key][1] != "open":
+        raise XVError(f"gate {key} is already {g[key][1]}", f"`xv status {proj.name}` shows every gate")
     fb = st.items("Open feedback")
-    skip = args[args.index("--skip") + 1] if "--skip" in args else None
-    if fb and not skip and "--force" not in args:
-        sys.exit(f"{len(fb)} open feedback item(s) remain; resolve them or pass --force")
+    if fb and not skip and not force:
+        raise XVError(f"{len(fb)} open feedback item(s) remain",
+                      f"close them with `xv feedback {proj.name} done <n>`, or pass --force to approve anyway")
     i = g[key][0]
     label = re.sub(r"^- \[.\] (?:~~)?\S+ ?", "", st.lines[i]).split("~~")[0].strip()
     if skip:
@@ -177,38 +175,48 @@ def cmd_gate(proj, args):
         st.lines[i] = f"- [x] {key} {label}"
     nxt = st.current_gate()
     st.set_stage(STAGE[nxt] if nxt else "done (owner uploads and posts)")
+    msg = f"gate {key} skipped: {skip}" if skip else f"gate {key} approved"
+    if dry_run:
+        return msg, st.stage()
     st.save()
     git(proj, "add", "-A")
-    msg = f"gate {key} skipped: {skip}" if skip else f"gate {key} approved"
     git(proj, "commit", "-q", "-m", msg)
-    print(f"{msg}\nStage: {st.stage()}")
+    return msg, st.stage()
 
 
-def cmd_feedback(proj, args):
+def feedback_list(proj):
+    return [t for _, t in Status(proj).items("Open feedback")]
+
+
+def feedback_add(proj, items):
     st = Status(proj)
-    if not args or args[0] == "list":
-        for n, (_, t) in enumerate(st.items("Open feedback"), 1):
-            print(f"{n}. {t}")
-        return
-    if args[0] == "add":
-        for t in args[1:]:
-            st.append("Open feedback", t)
-    elif args[0] == "done":
-        items = st.items("Open feedback")
-        drop = sorted({items[int(n) - 1][0] for n in args[1:]}, reverse=True)
-        for i in drop:
-            del st.lines[i]
-    else:
-        sys.exit("usage: xv feedback <project> add \"<item>\" ... | done <n> ... | list")
+    for t in items:
+        if not t.strip():
+            raise XVError("empty feedback item", code=USAGE)
+        st.append("Open feedback", t.strip())
     st.save()
-    cmd_feedback(proj, ["list"])
+    return feedback_list(proj)
 
 
-def cmd_decision(proj, args):
+def feedback_done(proj, numbers):
     st = Status(proj)
-    st.append("Decisions", " ".join(args))
+    items = st.items("Open feedback")
+    bad = [n for n in numbers if not 1 <= n <= len(items)]
+    if bad:
+        raise XVError(f"no open feedback item {', '.join(map(str, bad))}",
+                      f"there are {len(items)}; `xv feedback {proj.name} list` numbers them", code=USAGE)
+    for i in sorted({items[n - 1][0] for n in numbers}, reverse=True):
+        del st.lines[i]
     st.save()
-    print("added to Decisions")
+    return feedback_list(proj)
+
+
+def decision(proj, text):
+    if not text.strip():
+        raise XVError("empty decision", code=USAGE)
+    st = Status(proj)
+    st.append("Decisions", text.strip())
+    st.save()
 
 
 # ---------------------------------------------------------------- changed narration lines
@@ -225,7 +233,11 @@ def spoken_lines(script):
 
 
 def changed_lines(proj, ref):
-    old = json.loads(git(proj, "show", f"{ref}:script/script.json"))
+    """Narration lines that differ from `ref`, with their timestamps in the current timings.json."""
+    try:
+        old = json.loads(git(proj, "show", f"{ref}:script/script.json"))
+    except subprocess.CalledProcessError:
+        raise XVError(f"git ref {ref!r} has no script/script.json", "pass --since <commit> with a commit that has one")
     new = json.loads((proj / "script/script.json").read_text())
     a, b = spoken_lines(old), spoken_lines(new)
     t = json.loads((proj / "audio/timings.json").read_text())
@@ -237,10 +249,14 @@ def changed_lines(proj, ref):
             for j in range(j1, j2):
                 what = "voice only" if j - j1 < i2 - i1 and a[i1 + j - j1][1] == b[j][1] else ("text" if op == "replace" else "new")
                 s, e = times[j] if j < len(times) else (0, 0)
-                rows.append(f"{mmss(s)}-{mmss(e, True)}  {b[j][0]:10s} [{what}] {b[j][1]}")
+                rows.append({"start": s, "end": e, "from": mmss(s), "to": mmss(e, True), "scene": b[j][0], "change": what, "text": b[j][1]})
         if op in ("replace", "delete") and (i2 - i1) > (j2 - j1 if op == "replace" else 0):
             removed += [a[i][1] for i in range(i1 + (j2 - j1 if op == "replace" else 0), i2)]
     return rows, removed
+
+
+def format_row(r):
+    return f"{r['from']}-{r['to']}  {r['scene']:10s} [{r['change']}] {r['text']}"
 
 
 def default_ref(proj):
@@ -250,13 +266,12 @@ def default_ref(proj):
     return f"{last}~1"
 
 
-def cmd_changed(proj, args):
-    ref = args[args.index("--since") + 1] if "--since" in args else default_ref(proj)
+def changed(proj, since=None):
+    if not (proj / "audio/timings.json").exists():
+        raise XVError("no audio/timings.json yet", f"run `xv synth {proj.name}` first")
+    ref = since or default_ref(proj)
     rows, removed = changed_lines(proj, ref)
-    print(f"narration changes since {git(proj, 'log', '-n1', '--format=%h %s', ref)}")
-    print("\n".join(rows) or "no changed lines")
-    for r in removed:
-        print(f"removed: {r}")
+    return {"since": git(proj, "log", "-n1", "--format=%h %s", ref), "changed": rows, "removed": removed}
 
 
 # ---------------------------------------------------------------- review package
@@ -270,11 +285,16 @@ def since_gate(proj):
     return out
 
 
-def cmd_review(proj, args):
+def review(proj, gate_key=None):
+    """The review package for a gate, as markdown."""
     from xv import slug_of
     slug = slug_of(proj)
     st = Status(proj)
-    g = args[0] if args else st.current_gate()
+    g = {"1": "1-2", "2": "1-2"}.get(gate_key, gate_key) if gate_key else st.current_gate()
+    if g is None:
+        raise XVError("every gate is approved or skipped", "pass a gate to review it again, e.g. `xv review <p> 6`")
+    if g not in STAGE:
+        raise XVError(f"no gate {g!r}", f"gates are: {', '.join(GATES)}", code=USAGE)
     P = lambda rel: f"`{proj / rel}`"
     out = [f"## Review: gate {g}, {STAGE.get(g, g)}\n"]
     commits = since_gate(proj)
@@ -322,8 +342,8 @@ def cmd_review(proj, args):
         try:
             rows, removed = changed_lines(proj, default_ref(proj))
             if rows and len(rows) < 30:
-                out.append("Changed lines, new timestamps:\n" + "\n".join(f"- {r}" for r in rows) + "\n")
-        except subprocess.CalledProcessError:
+                out.append("Changed lines, new timestamps:\n" + "\n".join(f"- {format_row(r)}" for r in rows) + "\n")
+        except (subprocess.CalledProcessError, XVError):
             pass
     for s in stale(proj):
         out.append(f"STALE: {s}\n")
@@ -331,8 +351,4 @@ def cmd_review(proj, args):
     if fb:
         out.append(f"Open feedback still listed: {len(fb)}\n")
     out.append(f"Reply \"approved\" to pass gate {g}, or list changes.")
-    print("\n".join(out))
-
-
-CMDS = {"status": cmd_status, "commit": cmd_commit, "gate": cmd_gate, "feedback": cmd_feedback, "decision": cmd_decision,
-        "changed": cmd_changed, "review": cmd_review}
+    return "\n".join(out)

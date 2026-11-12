@@ -1,6 +1,6 @@
 """Build the manual-upload package for YouTube Studio. No network access, no API.
 
-Usage:  xv youtube <project>
+Called by `xv youtube <project>`.
 
 Reads   <project>/publish/youtube/metadata.json, audio/timings.json
 Writes  <project>/publish/youtube/description.txt   (paste into Studio)
@@ -11,6 +11,9 @@ sheet go in publish/youtube/sheet-notes.md, which is appended verbatim.
 """
 import json, sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import ui
 
 CATEGORIES = {"27": "Education", "28": "Science & Technology", "22": "People & Blogs"}
 
@@ -105,12 +108,8 @@ After publishing: add the video to its playlist, pin the comment from `{pub / "p
     if notes.exists():
         sheet += "\n" + notes.read_text().rstrip() + "\n"
     (pub / "upload-sheet.md").write_text(sheet)
-    print(f"wrote {pub / 'description.txt'}\nwrote {pub / 'upload-sheet.md'}")
+    ui.out(str(pub / "description.txt"))
+    ui.out(str(pub / "upload-sheet.md"))
     for w in warn:
-        print("WARNING:", w)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit(__doc__)
-    main(sys.argv[1])
+        ui.warn(w)
+    return warn

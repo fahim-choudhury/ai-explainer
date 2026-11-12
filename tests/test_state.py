@@ -2,6 +2,7 @@ import json, subprocess
 import pytest
 from conftest import set_script, set_timings
 import state
+from ui import XVError
 
 
 def log(proj):
@@ -14,44 +15,44 @@ def touch(proj, text):
 
 
 def test_commit_numbers_versions_from_history(project):
-    touch(project, "a"); state.cmd_commit(project, ["brief", "first"])
-    touch(project, "b"); state.cmd_commit(project, ["brief", "second"])
-    touch(project, "c"); state.cmd_commit(project, ["script", "draft"])
+    touch(project, "a"); state.commit(project, "brief", "first")
+    touch(project, "b"); state.commit(project, "brief", "second")
+    touch(project, "c"); state.commit(project, "script", "draft")
     assert log(project)[:3] == ["script v1: draft", "brief v2: second", "brief v1: first"]
     assert "(script v1 awaiting review)" in state.Status(project).stage()
 
 
 def test_commit_has_no_trailer(project):
-    touch(project, "a"); state.cmd_commit(project, ["brief", "x"])
+    touch(project, "a"); state.commit(project, "brief", "x")
     body = subprocess.run(["git", "log", "-1", "--format=%B"], cwd=project, capture_output=True, text=True).stdout
     assert body.strip() == "brief v1: x"
 
 
 def test_maintenance_commit_keeps_stage(project):
     before = state.Status(project).stage()
-    touch(project, "a"); state.cmd_commit(project, ["maintenance", "tidy"])
+    touch(project, "a"); state.commit(project, "maintenance", "tidy")
     assert log(project)[0] == "maintenance: tidy" and state.Status(project).stage() == before
 
 
 def test_gate_refuses_with_open_feedback(project):
-    state.cmd_feedback(project, ["add", "shorter intro", "fix colour"])
-    with pytest.raises(SystemExit):
-        state.cmd_gate(project, ["0"])
-    state.cmd_feedback(project, ["done", "1", "2"])
-    state.cmd_gate(project, ["0"])
+    state.feedback_add(project, ["shorter intro", "fix colour"])
+    with pytest.raises(XVError):
+        state.gate(project, "0")
+    state.feedback_done(project, [1, 2])
+    state.gate(project, "0")
     st = state.Status(project)
     assert st.gates()["0"][1] == "approved" and st.stage() == "1-2 research and script"
     assert log(project)[0] == "gate 0 approved"
 
 
 def test_skip_gate(project):
-    state.cmd_gate(project, ["7", "--skip", "YouTube only"])
+    state.gate(project, "7", skip="YouTube only")
     assert state.Status(project).gates()["7"][1] == "skipped"
     assert log(project)[0] == "gate 7 skipped: YouTube only"
 
 
 def test_decision_appends(project):
-    state.cmd_decision(project, ["Voice", "speed", "1.05"])
+    state.decision(project, "Voice speed 1.05")
     assert any(t == "Voice speed 1.05" for _, t in state.Status(project).items("Decisions"))
 
 
@@ -69,7 +70,7 @@ def test_changed_lines_reports_new_timestamps(project):
     set_script(project, [("intro", ["First line.", "Second line, edited."])])
     set_timings(project, [("intro", [(0.5, 2.0), (2.4, 5.6)])])
     rows, removed = state.changed_lines(project, "HEAD")
-    assert len(rows) == 1 and rows[0].startswith("0:02-0:06") and "Second line, edited." in rows[0]
+    assert len(rows) == 1 and state.format_row(rows[0]).startswith("0:02-0:06") and rows[0]["text"] == "Second line, edited."
 
 
 def test_voice_only_change_is_labelled(project):
@@ -78,4 +79,37 @@ def test_voice_only_change_is_labelled(project):
     set_script(project, [("intro", ["The control plane."])], say={"\\bcontrol plane\\b": "control-plane"})
     set_timings(project, [("intro", [(0.5, 2.0)])])
     rows, _ = state.changed_lines(project, "HEAD")
-    assert "[voice only]" in rows[0]
+    assert rows[0]["change"] == "voice only"
+
+
+def test_commit_dry_run_changes_nothing(project):
+    touch(project, "a")
+    msg, changes = state.commit(project, "brief", "x", dry_run=True)
+    assert msg == "brief v1: x" and changes and log(project)[0] == "init"
+
+
+def test_commit_errors(project):
+    with pytest.raises(XVError):
+        state.commit(project, "brief", "nothing changed")
+    touch(project, "a")
+    with pytest.raises(XVError) as e:
+        state.commit(project, "scirpt", "typo kind")
+    assert e.value.code == 2
+
+
+def test_gate_twice_is_an_error(project):
+    state.gate(project, "0")
+    with pytest.raises(XVError):
+        state.gate(project, "0")
+
+
+def test_feedback_done_out_of_range(project):
+    state.feedback_add(project, ["one"])
+    with pytest.raises(XVError):
+        state.feedback_done(project, [2])
+
+
+def test_status_data(project):
+    d = state.status(project)
+    assert d["current_gate"] == "0" and d["gates"]["7"] == "open" and d["open_feedback"] == []
+    assert "xv commit explainer-test brief" in d["next"]

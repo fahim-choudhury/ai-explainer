@@ -74,4 +74,4 @@ ln -s "$PWD/agents/claude/skills/explainer-video" ~/.claude/skills/explainer-vid
 
 ## Licenses
 
-This repository is MIT-licensed; see [LICENSE](LICENSE). Remotion has its own license: free for individuals and companies of up to 3 people, paid above that. [STYLE.md](STYLE.md) is based on The Writing Whip by Ossama Chaib. [THIRD_PARTY.md](THIRD_PARTY.md) lists every third-party component and its terms.
+This repository is MIT-licensed; see [LICENSE](LICENSE). Remotion has its own license: free for individuals and companies of up to 3 people, paid above that. [STYLE.md](STYLE.md) is adapted from The Writing Whip by Ossama Chaib ([tropes.fyi](https://tropes.fyi)), under CC BY 4.0. [THIRD_PARTY.md](THIRD_PARTY.md) lists every third-party component and its terms.

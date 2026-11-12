@@ -2,7 +2,7 @@
 
 Every text this workflow produces follows these rules: brief, findings, script, storyboard, YouTube and social copy, and the agent's messages to the owner. `xv lint` checks the patterns a regex can catch. The agent re-reads its output against the rest.
 
-Credit: these rules are The Writing Whip by Ossama Chaib ([ossama.is](https://ossama.is), [original gist](https://gist.github.com/ossa-ma/dae6f9571534f3fbd1266a384be00e11)). The longer catalogue in [`style/tropes.md`](style/tropes.md) is from [tropes.fyi](https://tropes.fyi), also by Ossama Chaib. See [THIRD_PARTY.md](THIRD_PARTY.md).
+Credit: the rules below are adapted from The Writing Whip by Ossama Chaib ([gist](https://gist.github.com/ossa-ma/dae6f9571534f3fbd1266a384be00e11)), part of [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The longer catalogue in [`style/tropes.md`](style/tropes.md) is from the same source under the same license. See [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ---
 
@@ -82,3 +82,9 @@ DO NOT (UNLESS FOR GOOD REASON) FALL INTO ANY OF THE FOLLOWING TROPES, BEHAVIOUR
 - Superficial analyses: Do not tack an "-ing" clause onto a sentence to add significance. No "highlighting its importance", "reflecting broader trends", "contributing to the development of".
 - "Despite its challenges...": Do not raise a problem only to dismiss it. No "Despite these challenges, [optimistic conclusion]".
 
+
+---
+
+Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Reuse, translate and adapt freely, with credit to [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is).
+
+Changes in this copy: the skill front matter was removed and the introduction above the first rule was added.

@@ -622,3 +622,7 @@ Explicitly announcing the conclusion with "In conclusion", "To sum up", or "In s
 Remember: any of these patterns used once might be fine. The problem is when
 multiple tropes appear together or when a single trope is used repeatedly.
 Write like a human: varied, imperfect, specific.
+
+---
+
+Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Reuse, translate and adapt freely, with credit to [tropes.fyi](https://tropes.fyi) by [ossama.is](https://ossama.is).

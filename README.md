@@ -4,7 +4,7 @@
 
 An AI agent produces an animated explainer video with you: research, script, narration, subtitles, animated diagrams, final render, and a ready-to-paste YouTube and social package. You approve each stage at a review gate, then upload and post yourself.
 
-The workflow works with any agent that can run shell commands and edit files: Claude Code, Codex, Gemini CLI, Cursor, OpenCode and others. The agent follows [AGENTS.md](AGENTS.md). Every production step is a command in `bin/xv` (short for Xplainer Video), so the same script and settings give the same files whichever agent runs them.
+The workflow works with any agent that can run shell commands and edit files: Claude Code, Codex, Gemini CLI, Cursor, OpenCode and others. The agent follows [AGENTS.md](AGENTS.md). Every production step is a command in `bin/xv` (short for explainer video), so the same script and settings give the same files whichever agent runs them.
 
 - Narration: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech, run locally
 - Pronunciation check: [faster-whisper](https://github.com/SYSTRAN/faster-whisper), run locally

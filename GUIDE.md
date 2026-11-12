@@ -154,7 +154,7 @@ Add `bin/` to your PATH to type `xv` directly. `xv help` lists every command, an
 | `xv changed <project>` | narration lines changed since the last script commit, with their new timestamps |
 | `xv commit`, `xv gate`, `xv feedback`, `xv decision` | the only way STATUS.md and project commits change |
 | `xv doctor` | checks every dependency against the lockfiles; other commands refuse to run until it passes |
-| `xv selftest` | runs a throwaway project through synthesis, the Whisper check, linting and stills |
+| `xv selftest` | runs a throwaway project through synthesis, the Whisper check, linting, stills and a full render |
 | `xv pdftext`, `xv transcribe` | text from PDF, audio and video inputs |
 
 The agent runs every step through these commands, so the same script, settings and toolkit version give the same files. The agent's own judgment goes into research, wording and visuals, and `xv lint` checks the wording.

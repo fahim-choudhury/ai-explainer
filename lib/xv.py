@@ -240,7 +240,8 @@ def cmd_render(a):
     raw = proj / "render/.raw.mp4"
     out = proj / f"render/{slug}.mp4"
     ui.info(f"rendering {t['total']:.0f} s of video; this takes a while")
-    remotion(proj, "render", proj / "video/src/index.ts", "Main", raw, "--codec=h264", "--crf=18", "--concurrency=8", "--log=error")
+    remotion(proj, "render", proj / "video/src/index.ts", "Main", raw, "--codec=h264", "--crf=18", "--concurrency=8", "--log=error",
+             f"--timeout={a.timeout}")
     ui.info("normalizing loudness to -14 LUFS")
     before = loudnorm(raw, out)
     raw.unlink()
@@ -640,7 +641,9 @@ def build_parser():
     m.add_argument("--per-beat", action="store_true", help="one frame per narration line instead of per scene")
     m.add_argument("--frames", metavar="N,N", help="specific frame numbers, comma-separated")
     cmd("studio", cmd_studio)
-    cmd("render", cmd_render)
+    p = cmd("render", cmd_render)
+    p.add_argument("--timeout", type=int, default=30000, metavar="MS",
+                   help="fail if a frame waits longer than this for delayRender (default: 30000, Remotion's default)")
     cmd("thumbnail", cmd_thumbnail)
 
     cmd("youtube", cmd_youtube)
@@ -659,7 +662,7 @@ def build_parser():
 
 HELP = {
     "doctor": "check every dependency against the lockfiles",
-    "selftest": "run a throwaway project through the main steps",
+    "selftest": "run a throwaway project through every main step, including a render",
     "new": "create a project from the template",
     "list": "list projects in the workspace with their stage",
     "status": "stage, gates, open feedback, stale outputs and the next step",

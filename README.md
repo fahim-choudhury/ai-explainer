@@ -52,7 +52,7 @@ cd ai-explainer
 | Remotion's headless browser | the Remotion version | `node_modules/.remotion/` |
 | Kokoro and Whisper models, verified by SHA256 | `deps/models.json` | `models/` |
 
-Then it runs `xv doctor`, which checks all of the above against the lockfiles and writes a verification stamp, and `xv selftest`, which takes a throwaway project through narration, the Whisper check, linting, a type check and two stills. Every `xv` command that uses a dependency refuses to run until `xv doctor` has passed, and again after any lockfile changes.
+Then it runs `xv doctor`, which checks all of the above against the lockfiles and writes a verification stamp, and `xv selftest`, which takes a throwaway project through narration, the Whisper check, linting, a type check, two stills and a short full render. Every `xv` command that uses a dependency refuses to run until `xv doctor` has passed, and again after any lockfile changes.
 
 Rerunning `./setup` is safe; it skips what is already correct.
 

@@ -170,7 +170,7 @@ Triggered by "autopilot", "autopilot until <stage>" or "autopilot from <stage>".
 | --- | --- |
 | `xv help [<command>]` | help and examples for xv or one command |
 | `xv doctor [--quick] [--json]` | verify every dependency against the lockfiles |
-| `xv selftest` | throwaway project through synth, ASR, lint, typecheck and stills |
+| `xv selftest` | throwaway project through synth, ASR, lint, typecheck, stills, thumbnail and a full render |
 | `xv new <slug> "<title>" [-n]` | new project from `template/` |
 | `xv list [--json]` | projects in the workspace with their stage |
 | `xv status <project> [--json]` | stage, gates, open feedback, stale outputs, next step |

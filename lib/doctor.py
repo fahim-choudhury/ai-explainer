@@ -1,7 +1,7 @@
 """Dependency verification. ./setup installs; this module checks, and gates every other xv command.
 
   xv doctor [--quick] [--json]   check every dependency; a full pass writes .xv-verified
-  xv selftest                    throwaway project through synth, ASR, lint, typecheck and two stills
+  xv selftest                    throwaway project through synth, ASR, lint, typecheck, stills, thumbnail and a full render
   python lib/doctor.py fetch-models   download and verify models (used by ./setup)
 """
 import hashlib, json, os, platform, re, shutil, subprocess, sys, tempfile, urllib.request
@@ -134,19 +134,21 @@ def require_verified():
 
 
 def selftest():
-    """Throwaway project through the main steps. Returns the failed step, or None."""
+    """Throwaway project through the main steps, including a full render (a still alone misses
+    failures that only appear across many frames, such as an uncleared delayRender; the short --timeout (Remotion's minimum, 7 s) makes those fail
+    within this 12-second video instead of after Remotion's default 30 s). Returns the failed step, or None."""
     xv = REPO / "bin/xv"
     with tempfile.TemporaryDirectory(prefix="xv-selftest-") as ws:
         p = "explainer-selftest"
         steps = [["new", "selftest", "Self test"], ["synth", p], ["asr", p], ["lint", p, "--only", "narration"], ["typecheck", p],
-                 ["stills", p, "--frames", "30"], ["thumbnail", p]]
+                 ["stills", p, "--frames", "30"], ["thumbnail", p], ["render", p, "--timeout", "7000"]]
         for s in steps:
             ui.info(f"== xv {' '.join(s)}")
             r = subprocess.run([xv, "--workspace", ws, *(["--quiet"] if ui.QUIET else []), *s], stdout=sys.stderr)
             if r.returncode != 0:
                 return " ".join(s)
         ui.info((Path(ws) / p / "audio/asr-check.md").read_text().splitlines()[2])
-        for f in ("stills/f30.png", "publish/youtube/thumbnail.jpg"):
+        for f in ("stills/f30.png", "publish/youtube/thumbnail.jpg", "render/selftest.mp4", "render/manifest.json"):
             if not (Path(ws) / p / f).exists():
                 return f"{f} was not produced"
     return None

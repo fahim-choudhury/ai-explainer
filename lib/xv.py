@@ -3,7 +3,7 @@
 Command-line conventions follow https://clig.dev: results on stdout, progress and hints on stderr,
 --json for machine-readable output, -q to quiet, -d for debugging, stable exit codes.
 """
-import argparse, datetime, difflib, json, re, shutil, subprocess, sys, traceback
+import argparse, datetime, difflib, json, os, re, shutil, subprocess, sys, traceback
 from pathlib import Path
 
 import paths
@@ -240,7 +240,7 @@ def cmd_render(a):
     raw = proj / "render/.raw.mp4"
     out = proj / f"render/{slug}.mp4"
     ui.info(f"rendering {t['total']:.0f} s of video; this takes a while")
-    remotion(proj, "render", proj / "video/src/index.ts", "Main", raw, "--codec=h264", "--crf=18", "--concurrency=8", "--log=error",
+    remotion(proj, "render", proj / "video/src/index.ts", "Main", raw, "--codec=h264", "--crf=18", f"--concurrency={min(8, os.cpu_count() or 1)}", "--log=error",
              f"--timeout={a.timeout}")
     ui.info("normalizing loudness to -14 LUFS")
     before = loudnorm(raw, out)

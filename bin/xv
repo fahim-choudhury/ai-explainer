@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# xv: the explainer workflow CLI. Add this repo's bin/ to PATH, or call it by full path.
+repo="$(dirname "$(dirname "$(readlink -f "$0")")")"
+if [ ! -x "$repo/.venv/bin/python" ]; then
+  echo "xv: no Python environment yet. Run $repo/setup first." >&2
+  exit 1
+fi
+exec "$repo/.venv/bin/python" "$repo/lib/xv.py" "$@"

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Install every dependency from pinned lockfiles, verify it, and run a self test.
+# Safe to rerun: each step skips what is already present and correct.
+#
+#   ./setup              full setup, then `xv doctor` and `xv selftest`
+#   ./setup --no-test    skip the self test
+#
+# Downloads into this repository only: .tools/ (uv, Python), .venv/, node_modules/, models/.
+# System tools (git, curl, tar, ffmpeg, Node.js 20+) are checked, not installed.
+set -euo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+REPO="$PWD"
+export UV_PYTHON_INSTALL_DIR="$REPO/.tools/python"
+export UV_PYTHON_PREFERENCE=only-managed
+
+step() { printf '\n== %s\n' "$*"; }
+die() { printf 'setup: %s\n' "$*" >&2; exit 1; }
+
+step "1/6 system tools"
+[ "$(uname -s)" = Linux ] || die "Linux only (on Windows, use WSL)."
+missing=()
+for t in git curl tar ffmpeg ffprobe node npm npx sha256sum; do
+  command -v "$t" >/dev/null || missing+=("$t")
+done
+[ ${#missing[@]} -eq 0 ] || die "missing: ${missing[*]}. Install them with your package manager (see README.md), then rerun."
+node_major="$(node -p 'process.versions.node.split(".")[0]')"
+[ "$node_major" -ge 20 ] || die "Node.js 20 or newer needed, found $(node --version)."
+echo "ok: git curl tar ffmpeg ffprobe node $(node --version) npm sha256sum"
+
+step "2/6 uv (pinned in deps/tools.json)"
+arch="$(uname -m)"
+read -r uv_url uv_sha uv_ver < <(python3 - "$arch" <<'PY' 2>/dev/null || node -e '
+const t=require("./deps/tools.json").uv, a=process.argv[1]; console.log(t[a].url, t[a].sha256, t.version)' "$arch"
+import json, sys
+t = json.load(open("deps/tools.json"))["uv"]
+print(t[sys.argv[1]]["url"], t[sys.argv[1]]["sha256"], t["version"])
+PY
+)
+[ -n "${uv_url:-}" ] || die "no pinned uv build for architecture $arch"
+if [ -x .tools/uv ] && [ "$(.tools/uv --version | cut -d' ' -f2)" = "$uv_ver" ]; then
+  echo "ok: uv $uv_ver (present)"
+else
+  mkdir -p .tools .cache
+  curl -fsSL "$uv_url" -o .cache/uv.tar.gz
+  echo "$uv_sha  .cache/uv.tar.gz" | sha256sum -c --quiet || die "uv download failed its SHA256 check"
+  tar -xzf .cache/uv.tar.gz -C .cache
+  install -m 755 .cache/uv-*/uv .tools/uv
+  rm -rf .cache/uv.tar.gz .cache/uv-*/
+  echo "ok: uv $uv_ver"
+fi
+
+py_ver="$(node -p 'require("./deps/tools.json").python')"
+step "3/6 Python $py_ver and packages (uv.lock)"
+.tools/uv python install "$py_ver"
+.tools/uv sync --locked --python "$py_ver"
+
+step "4/6 Node packages (package-lock.json) and Remotion's headless browser"
+if [ -f node_modules/.package-lock.json ] && cmp -s <(node -p 'JSON.stringify(Object.fromEntries(Object.entries(require("./package-lock.json").packages).filter(([k])=>k).map(([k,v])=>[k,v.version])))') \
+     <(node -p 'JSON.stringify(Object.fromEntries(Object.entries(require("./node_modules/.package-lock.json").packages).filter(([k])=>k).map(([k,v])=>[k,v.version])))'); then
+  echo "ok: node_modules matches package-lock.json (present)"
+else
+  npm ci --no-audit --no-fund
+fi
+npx --no-install remotion browser ensure
+
+step "5/6 models (deps/models.json, SHA256-verified)"
+.venv/bin/python lib/doctor.py fetch-models
+
+step "6/6 verify"
+bin/xv doctor
+if [ "${1:-}" != "--no-test" ]; then
+  bin/xv selftest
+fi
+
+cat <<EOF
+
+Setup complete. Add $REPO/bin to PATH to type \`xv\`.
+Video projects go in the workspace: \$XV_WORKSPACE, or \`workspace\` in xv.toml, or $REPO/workspace.
+Start an agent in this folder and ask it for an explainer video; it reads AGENTS.md.
+EOF

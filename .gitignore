@@ -1,0 +1,10 @@
+.venv/
+.tools/
+.cache/
+node_modules/
+models/
+workspace/
+xv.toml
+.xv-verified
+__pycache__/
+*.pyc

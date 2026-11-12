@@ -1,0 +1,17 @@
+{
+  "slug": "{{SLUG}}",
+  "title": "{{TITLE}}",
+  "voice": "af_heart",
+  "speed": 1.0,
+  "lang": "en-us",
+  "fps": 30,
+  "say": {},
+  "acronyms": {},
+  "acronyms_known": [],
+  "asr_accept": [],
+  "gaps": { "line": 0.35, "head": 0.5, "tail": 0.9 },
+  "scenes": [
+    { "id": "intro", "title": "Intro", "lines": ["Replace this line with the opening narration.", "Each line becomes one subtitle and one animation beat."] },
+    { "id": "outro", "title": "Outro", "lines": ["Replace this line with the closing narration."] }
+  ]
+}

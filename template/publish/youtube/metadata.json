@@ -1,0 +1,13 @@
+{
+  "title": "",
+  "description_template": "Opening paragraph.\n\nChapters\n{chapters}\n\nLinks\n\nNarration is AI-generated text-to-speech (Kokoro).",
+  "chapter_titles": {
+    "intro": "Intro",
+    "outro": "Outro"
+  },
+  "tags": [],
+  "categoryId": "28",
+  "defaultLanguage": "en",
+  "madeForKids": false,
+  "visibility": "Public, or Schedule for the release slot in publish/social/plan.md"
+}

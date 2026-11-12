@@ -1,0 +1,5 @@
+{
+  "extends": "./remotion/tsconfig.base.json",
+  "compilerOptions": { "baseUrl": ".", "paths": { "@xv/*": ["remotion/*"] } },
+  "include": ["remotion", "remotion.config.ts"]
+}

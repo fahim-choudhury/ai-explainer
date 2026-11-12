@@ -1,0 +1,3 @@
+# Copy to xv.toml (ignored by git). $XV_WORKSPACE overrides this.
+# Folder that holds the video projects (explainer-<slug>/). Default: <repo>/workspace
+workspace = "~/Videos/explainers"

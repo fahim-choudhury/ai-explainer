@@ -1,0 +1,15 @@
+{
+  "_comment": "Tools ./setup downloads into .tools/ and verifies. System tools it only checks are listed in lib/doctor.py (SYSTEM).",
+  "python": "3.14.6",
+  "uv": {
+    "version": "0.11.24",
+    "x86_64": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.11.24/uv-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "5ce1ad074a78f96c5c8122088bb85a12eb282195bc1453151a48762e4fc31fed"
+    },
+    "aarch64": {
+      "url": "https://github.com/astral-sh/uv/releases/download/0.11.24/uv-aarch64-unknown-linux-gnu.tar.gz",
+      "sha256": "e22c66d36a0098b17cff80a8647e0b8c58202af899d4e9eb820fc7ad126435a1"
+    }
+  }
+}

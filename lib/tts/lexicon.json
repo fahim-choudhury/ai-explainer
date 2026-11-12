@@ -1,0 +1,13 @@
+{
+  "_comment": "Global spoken-form overrides (regex -> what the voice says). Captions keep the original text. Projects add their own in script.json 'say'.",
+  "\\bgomobile\\b": "go mobile",
+  "\\bBSD 3\\b": "B S D 3",
+  "\\bEntra ID\\b": "Entra I D",
+  "\\bAWS\\b": "A-W-S",
+  "\\bMFA\\b": "Multi-Factor Authentication",
+  "\\bICE\\b": "I C E",
+  "\\bOS\\b": "operating system",
+  "\\bSTUN\\b": "S T U N",
+  "\\bsingle sign on\\b": "single-sign-on",
+  "\\biOS\\b": "IOS"
+}
